@@ -1,4 +1,6 @@
 import { users, generatedImages, type User, type InsertUser, type GeneratedImage, type InsertImage } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -11,61 +13,51 @@ export interface IStorage {
   deleteGeneratedImage(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private images: Map<number, GeneratedImage>;
-  private currentUserId: number;
-  private currentImageId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.images = new Map();
-    this.currentUserId = 1;
-    this.currentImageId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createGeneratedImage(insertImage: InsertImage): Promise<GeneratedImage> {
-    const id = this.currentImageId++;
-    const image: GeneratedImage = { 
-      ...insertImage, 
-      id,
-      createdAt: new Date()
-    };
-    this.images.set(id, image);
+    const [image] = await db
+      .insert(generatedImages)
+      .values(insertImage)
+      .returning();
     return image;
   }
 
   async getGeneratedImages(limit = 50): Promise<GeneratedImage[]> {
-    const images = Array.from(this.images.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, limit);
+    const images = await db
+      .select()
+      .from(generatedImages)
+      .orderBy(desc(generatedImages.createdAt))
+      .limit(limit);
     return images;
   }
 
   async getGeneratedImage(id: number): Promise<GeneratedImage | undefined> {
-    return this.images.get(id);
+    const [image] = await db.select().from(generatedImages).where(eq(generatedImages.id, id));
+    return image || undefined;
   }
 
   async deleteGeneratedImage(id: number): Promise<boolean> {
-    return this.images.delete(id);
+    const result = await db.delete(generatedImages).where(eq(generatedImages.id, id));
+    return result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
