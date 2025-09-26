@@ -13,7 +13,7 @@ AIPixel Studio is a powerful and intuitive application that allows you to genera
 
 ## **🚀 Live Demo**
 
-[Check out the live demo\!](https://www.google.com/search?q=https://29cbbecb-8ccb-4296-b7c6-9c4e3a264b48-00-3hjiueblmuzk9.worf.replit.dev/)
+[Check out the live demo\!](https://29cbbecb-8ccb-4296-b7c6-9c4e3a264b48-00-3hjiueblmuzk9.worf.replit.dev/)
 
 ## **✨ Features**
 
